@@ -1,17 +1,47 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, Download } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Eye, MoreHorizontal, Download } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function CashbacksPage() {
+  const {
+    data: cashbacks,
+    error,
+    isLoading,
+  } = useSWR("/api/cashbacks", fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+  });
+
+  if (error) return <div>Failed to load cashbacks</div>;
+  if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -23,7 +53,9 @@ export default function CashbacksPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Cashbacks</CardTitle>
-          <CardDescription>View and manage all cashbacks issued to users</CardDescription>
+          <CardDescription>
+            View and manage all cashbacks issued to users
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -39,16 +71,28 @@ export default function CashbacksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cashbacks.map((cashback) => (
+              {cashbacks?.map((cashback: any) => (
                 <TableRow key={cashback.id}>
                   <TableCell className="font-medium">{cashback.id}</TableCell>
-                  <TableCell>{cashback.user}</TableCell>
+                  <TableCell>{cashback.user.name}</TableCell>
                   <TableCell>{cashback.invoiceId}</TableCell>
                   <TableCell>₹{cashback.amount}</TableCell>
                   <TableCell>
-                    <Badge variant={cashback.type === "MERCHANT" ? "default" : "secondary"}>{cashback.type}</Badge>
+                    <Badge
+                      variant={
+                        cashback.type === "MERCHANT" ? "default" : "secondary"
+                      }
+                    >
+                      {cashback.type}
+                    </Badge>
                   </TableCell>
-                  <TableCell>{cashback.date}</TableCell>
+                  <TableCell>
+                    {new Date(cashback.createdAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -77,50 +121,5 @@ export default function CashbacksPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
-// Sample data
-const cashbacks = [
-  {
-    id: "CB-001",
-    user: "Rahul Kumar",
-    invoiceId: "INV-001",
-    amount: "59.97",
-    type: "MERCHANT",
-    date: "2023-03-15",
-  },
-  {
-    id: "CB-002",
-    user: "Ananya Patel",
-    invoiceId: "INV-002",
-    amount: "17.99",
-    type: "MERCHANT",
-    date: "2023-03-14",
-  },
-  {
-    id: "CB-003",
-    user: "Vikram Singh",
-    invoiceId: "INV-003",
-    amount: "73.52",
-    type: "MERCHANT",
-    date: "2023-03-13",
-  },
-  {
-    id: "CB-004",
-    user: "Priya Mehta",
-    invoiceId: "INV-004",
-    amount: "120.00",
-    type: "NON_MERCHANT",
-    date: "2023-03-12",
-  },
-  {
-    id: "CB-005",
-    user: "Arjun Kapoor",
-    invoiceId: "INV-005",
-    amount: "105.01",
-    type: "MERCHANT",
-    date: "2023-03-11",
-  },
-]
-

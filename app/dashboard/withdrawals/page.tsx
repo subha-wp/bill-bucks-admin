@@ -1,6 +1,22 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,11 +24,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, CheckCircle, XCircle } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Eye, MoreHorizontal, CheckCircle, XCircle } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function WithdrawalsPage() {
+  const {
+    data: withdrawals,
+    error,
+    isLoading,
+  } = useSWR("/api/withdrawals", fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+  });
+
+  if (error) return <div>Failed to load withdrawals</div>;
+  if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -24,7 +54,9 @@ export default function WithdrawalsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Withdrawals</CardTitle>
-          <CardDescription>Manage all withdrawal requests from users</CardDescription>
+          <CardDescription>
+            Manage all withdrawal requests from users
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -40,10 +72,10 @@ export default function WithdrawalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {withdrawals.map((withdrawal) => (
+              {withdrawals?.map((withdrawal: any) => (
                 <TableRow key={withdrawal.id}>
                   <TableCell className="font-medium">{withdrawal.id}</TableCell>
-                  <TableCell>{withdrawal.user}</TableCell>
+                  <TableCell>{withdrawal.user.name}</TableCell>
                   <TableCell>{withdrawal.upiId}</TableCell>
                   <TableCell>₹{withdrawal.amount}</TableCell>
                   <TableCell>
@@ -52,14 +84,16 @@ export default function WithdrawalsPage() {
                         withdrawal.status === "COMPLETED"
                           ? "success"
                           : withdrawal.status === "PENDING"
-                            ? "outline"
-                            : "destructive"
+                          ? "outline"
+                          : "destructive"
                       }
                     >
                       {withdrawal.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{withdrawal.date}</TableCell>
+                  <TableCell>
+                    {new Date(withdrawal.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -93,51 +127,5 @@ export default function WithdrawalsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
-// Sample data
-const withdrawals = [
-  {
-    id: "WD-001",
-    user: "Rahul Kumar",
-    upiId: "rahul@okicici",
-    amount: "500.00",
-    status: "COMPLETED",
-    date: "2023-03-15",
-  },
-  {
-    id: "WD-002",
-    user: "Ananya Patel",
-    upiId: "ananya@okhdfc",
-    amount: "1,200.00",
-    status: "PENDING",
-    date: "2023-03-14",
-  },
-  {
-    id: "WD-003",
-    user: "Vikram Singh",
-    upiId: "vikram@oksbi",
-    amount: "750.50",
-    status: "REJECTED",
-    date: "2023-03-13",
-    notes: "Invalid UPI ID",
-  },
-  {
-    id: "WD-004",
-    user: "Priya Mehta",
-    upiId: "priya@okaxis",
-    amount: "2,000.00",
-    status: "PENDING",
-    date: "2023-03-12",
-  },
-  {
-    id: "WD-005",
-    user: "Arjun Kapoor",
-    upiId: "arjun@okpaytm",
-    amount: "1,500.00",
-    status: "COMPLETED",
-    date: "2023-03-11",
-  },
-]
-

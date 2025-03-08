@@ -19,9 +19,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            ₹{stats?.totalRevenue.toFixed(2)}
-          </div>
+          <div className="text-2xl font-bold">₹{stats?.totalRevenue}</div>
           <p className="text-xs text-muted-foreground">
             <span className="text-emerald-500 flex items-center">
               +20.1% <ArrowUpIcon className="h-4 w-4 ml-1" />
@@ -38,9 +36,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <CreditCard className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            ₹{stats?.totalCashbacks.toFixed(2)}
-          </div>
+          <div className="text-2xl font-bold">₹{stats?.totalCashbacks}</div>
           <p className="text-xs text-muted-foreground">
             <span className="text-emerald-500 flex items-center">
               +12.2% <ArrowUpIcon className="h-4 w-4 ml-1" />
@@ -57,9 +53,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            ₹{stats?.pendingWithdrawals.toFixed(2)}
-          </div>
+          <div className="text-2xl font-bold">₹{stats?.pendingWithdrawals}</div>
           <p className="text-xs text-muted-foreground">
             <span className="text-rose-500 flex items-center">
               +19.5% <ArrowUpIcon className="h-4 w-4 ml-1" />

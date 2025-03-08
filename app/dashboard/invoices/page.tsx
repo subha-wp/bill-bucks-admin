@@ -1,6 +1,22 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,11 +24,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, Download, CheckCircle, XCircle } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  Eye,
+  MoreHorizontal,
+  Download,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function InvoicesPage() {
+  const {
+    data: invoices,
+    error,
+    isLoading,
+  } = useSWR("/api/invoices", fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+  });
+
+  if (error) return <div>Failed to load invoices</div>;
+  if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -24,7 +60,9 @@ export default function InvoicesPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Invoices</CardTitle>
-          <CardDescription>Manage all invoice submissions from users</CardDescription>
+          <CardDescription>
+            Manage all invoice submissions from users
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -41,11 +79,11 @@ export default function InvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
+              {invoices?.map((invoice: any) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.user}</TableCell>
-                  <TableCell>{invoice.merchant}</TableCell>
+                  <TableCell>{invoice.user.name}</TableCell>
+                  <TableCell>{invoice.merchant?.name || "N/A"}</TableCell>
                   <TableCell>₹{invoice.amount}</TableCell>
                   <TableCell>
                     <Badge
@@ -53,16 +91,24 @@ export default function InvoicesPage() {
                         invoice.status === "APPROVED"
                           ? "success"
                           : invoice.status === "PENDING"
-                            ? "outline"
-                            : "destructive"
+                          ? "outline"
+                          : "destructive"
                       }
                     >
                       {invoice.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{invoice.date}</TableCell>
                   <TableCell>
-                    <Badge variant={invoice.isMerchant ? "default" : "secondary"}>
+                    {new Date(invoice.createdAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={invoice.isMerchant ? "default" : "secondary"}
+                    >
                       {invoice.isMerchant ? "Merchant" : "Non-Merchant"}
                     </Badge>
                   </TableCell>
@@ -103,55 +149,5 @@ export default function InvoicesPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
-// Sample data
-const invoices = [
-  {
-    id: "INV-001",
-    user: "Rahul Kumar",
-    merchant: "Reliance Fresh",
-    amount: "1,999.00",
-    status: "APPROVED",
-    date: "2023-03-15",
-    isMerchant: true,
-  },
-  {
-    id: "INV-002",
-    user: "Ananya Patel",
-    merchant: "Big Bazaar",
-    amount: "599.50",
-    status: "PENDING",
-    date: "2023-03-14",
-    isMerchant: true,
-  },
-  {
-    id: "INV-003",
-    user: "Vikram Singh",
-    merchant: "DMart",
-    amount: "2,450.75",
-    status: "REJECTED",
-    date: "2023-03-13",
-    isMerchant: true,
-  },
-  {
-    id: "INV-004",
-    user: "Priya Mehta",
-    merchant: "N/A",
-    amount: "1,200.00",
-    status: "PENDING",
-    date: "2023-03-12",
-    isMerchant: false,
-  },
-  {
-    id: "INV-005",
-    user: "Arjun Kapoor",
-    merchant: "More Supermarket",
-    amount: "3,500.25",
-    status: "APPROVED",
-    date: "2023-03-11",
-    isMerchant: true,
-  },
-]
-
