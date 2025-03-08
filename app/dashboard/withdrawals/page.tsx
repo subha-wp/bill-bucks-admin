@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -28,20 +29,66 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Eye, MoreHorizontal, CheckCircle, XCircle } from "lucide-react";
 import useSWR from "swr";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function WithdrawalsPage() {
-  const {
-    data: withdrawals,
-    error,
-    isLoading,
-  } = useSWR("/api/withdrawals", fetcher, {
-    refreshInterval: 5000, // Refresh every 5 seconds
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
+
+  const { data, error, isLoading, mutate } = useSWR(
+    `/api/withdrawals?page=${currentPage}&limit=${limit}`,
+    fetcher,
+    {
+      refreshInterval: 5000,
+    }
+  );
+
+  const updateWithdrawalStatus = async (id: string, status: string) => {
+    try {
+      const response = await fetch(`/api/withdrawals/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update withdrawal status");
+      }
+
+      toast({
+        title: "Success",
+        description: `Withdrawal ${status.toLowerCase()} successfully`,
+      });
+
+      // Refresh the data
+      mutate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update withdrawal status",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (error) return <div>Failed to load withdrawals</div>;
   if (isLoading) return <div>Loading...</div>;
+
+  const { withdrawals, total, pages } = data;
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -109,14 +156,33 @@ export default function WithdrawalsPage() {
                           View details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Mark as completed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <XCircle className="mr-2 h-4 w-4" />
-                          Reject
-                        </DropdownMenuItem>
+                        {withdrawal.status === "PENDING" && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateWithdrawalStatus(
+                                  withdrawal.id,
+                                  "COMPLETED"
+                                )
+                              }
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Mark as completed
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateWithdrawalStatus(
+                                  withdrawal.id,
+                                  "REJECTED"
+                                )
+                              }
+                              className="text-destructive"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Reject
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -124,6 +190,53 @@ export default function WithdrawalsPage() {
               ))}
             </TableBody>
           </Table>
+
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < pages) setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage >= pages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>
