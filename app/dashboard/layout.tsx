@@ -10,9 +10,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen">
-        <AppSidebar />
+        <AppSidebar variant="inset" />
         <SidebarInset>
           <div className="border-b">
             <div className="flex h-16 items-center px-4">
