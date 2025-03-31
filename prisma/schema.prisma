@@ -8,23 +8,25 @@ datasource db {
 }
 
 model User {
-  id                   String            @id @default(cuid())
-  name                 String?
-  avatarUrl            String?
-  phoneNumber          String            @unique
-  hashedPassword       String
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  subscribe            Boolean           @default(false)
-  balance              Decimal           @default(0) @db.Decimal(10, 2)
-  referralCode         String            @unique @default(cuid())
-  referredBy           String?
-  nonMerchantBillCount Int               @default(0) // Track non-merchant bill count
-  sessions             Session[]
-  invoices             Invoice[]
-  referralHistory      ReferralHistory[]
-  withdrawals          Withdrawal[]
-  cashbacks            Cashback[] // New relation
+  id                     String            @id @default(cuid())
+  name                   String?
+  avatarUrl              String?
+  phoneNumber            String            @unique
+  hashedPassword         String
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  subscribe              Boolean           @default(false)
+  balance                Decimal           @default(0) @db.Decimal(10, 2)
+  referralCode           String            @unique @default(cuid())
+  referredBy             String?
+  nonMerchantBillCount   Int               @default(0)
+  razorpaySubscriptionId String?           @unique
+  subscriptionStatus     String? // PENDING, ACTIVE, CANCELLED, FAILED
+  sessions               Session[]
+  invoices               Invoice[]
+  referralHistory        ReferralHistory[]
+  withdrawals            Withdrawal[]
+  cashbacks              Cashback[]
 }
 
 model PushToken {
@@ -55,6 +57,10 @@ model Merchant {
   phone          String
   city           String
   cashbackAmount Decimal   @default(3.00) @db.Decimal(10, 2) // Default cashback amount
+  logoUrl        String? // New: Merchant logo URL
+  shopImageUrl   String? // New: Shop image URL
+  latitude       Float? // New: Merchant location latitude
+  longitude      Float? // New: Merchant location longitude
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   invoices       Invoice[]
@@ -122,4 +128,16 @@ model Cashback {
   @@index([userId])
   @@index([type])
   @@index([createdAt])
+}
+
+// New model for tracking contacts
+model Contact {
+  id          String   @id @default(cuid())
+  name        String?
+  phoneNumber String   @unique
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([phoneNumber])
 }

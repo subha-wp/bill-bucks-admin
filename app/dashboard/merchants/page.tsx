@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -17,17 +18,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Eye, MoreHorizontal, Edit, Trash } from "lucide-react";
 import useSWR from "swr";
 import { toast } from "@/hooks/use-toast";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useState } from "react";
 
 interface Merchant {
   id: string;
@@ -36,17 +46,97 @@ interface Merchant {
   city: string;
   phone: string;
   cashbackAmount: number;
+  logoUrl?: string;
+  shopImageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
 }
 
+interface NewMerchant {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  cashbackAmount: number;
+  logoUrl: string;
+  shopImageUrl: string;
+  latitude: number;
+  longitude: number;
+}
+
+const initialMerchantState: NewMerchant = {
+  name: "",
+  address: "",
+  city: "",
+  phone: "",
+  cashbackAmount: 3,
+  logoUrl: "",
+  shopImageUrl: "",
+  latitude: 0,
+  longitude: 0,
+};
+
 export default function MerchantsPage() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [newMerchant, setNewMerchant] =
+    useState<NewMerchant>(initialMerchantState);
+
   const {
     data: merchants,
     error,
     isLoading,
-  } = useSWR<Merchant[]>("/api/merchants", fetcher, {
-    refreshInterval: 5000, // Refresh every 5 seconds
-  });
+    mutate,
+  } = useSWR<Merchant[]>(
+    "/api/merchants",
+    (url) => fetch(url).then((res) => res.json()),
+    {
+      refreshInterval: 5000,
+    }
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewMerchant((prev) => ({
+      ...prev,
+      [name]:
+        name === "cashbackAmount" || name === "latitude" || name === "longitude"
+          ? parseFloat(value)
+          : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("/api/merchants", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newMerchant),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create merchant");
+      }
+
+      toast({
+        title: "Success",
+        description: "Merchant created successfully",
+      });
+
+      setIsOpen(false);
+      setNewMerchant(initialMerchantState);
+      mutate(); // Refresh the merchants list
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create merchant",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (error) {
     toast({
@@ -64,7 +154,109 @@ export default function MerchantsPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Merchants</h2>
         <div className="flex items-center space-x-2">
-          <Button>Add Merchant</Button>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button>Add Merchant</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add New Merchant</DialogTitle>
+                <DialogDescription>
+                  Enter the merchant details below
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Input
+                    name="name"
+                    placeholder="Merchant Name"
+                    value={newMerchant.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="address"
+                    placeholder="Address"
+                    value={newMerchant.address}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="city"
+                    placeholder="City"
+                    value={newMerchant.city}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="phone"
+                    placeholder="Phone Number"
+                    value={newMerchant.phone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="cashbackAmount"
+                    type="number"
+                    placeholder="Cashback Amount (%)"
+                    value={newMerchant.cashbackAmount}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="logoUrl"
+                    placeholder="Logo URL"
+                    value={newMerchant.logoUrl}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    name="shopImageUrl"
+                    placeholder="Shop Image URL"
+                    value={newMerchant.shopImageUrl}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    name="latitude"
+                    type="number"
+                    placeholder="Latitude"
+                    value={newMerchant.latitude}
+                    onChange={handleInputChange}
+                    required
+                    step="any"
+                  />
+                  <Input
+                    name="longitude"
+                    type="number"
+                    placeholder="Longitude"
+                    value={newMerchant.longitude}
+                    onChange={handleInputChange}
+                    required
+                    step="any"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Add Merchant</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       <Card>

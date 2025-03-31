@@ -23,7 +23,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, address, phone, city, cashbackAmount } = body;
+    const {
+      name,
+      address,
+      phone,
+      city,
+      cashbackAmount,
+      logoUrl,
+      shopImageUrl,
+      latitude,
+      longitude,
+    } = body;
 
     const merchant = await prisma.merchant.create({
       data: {
@@ -32,6 +42,10 @@ export async function POST(request: Request) {
         phone,
         city,
         cashbackAmount,
+        logoUrl,
+        shopImageUrl,
+        latitude,
+        longitude,
       },
     });
 
