@@ -19,7 +19,7 @@ export default function DashboardLayout({
         <AppSidebar />
         <SidebarInset className="flex-1 transition-all duration-300">
           <div className="border-b">
-            <div className="flex h-16 items-center px-4 max-w-6xl">
+            <div className="flex h-16 items-center px-4 ">
               <SidebarTrigger className="mr-2 z-20" />
               <MainNav className="mx-6" />
               <div className="ml-auto flex items-center space-x-4">

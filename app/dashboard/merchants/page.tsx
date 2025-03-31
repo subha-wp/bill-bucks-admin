@@ -26,18 +26,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Eye, MoreHorizontal, Edit, Trash } from "lucide-react";
 import useSWR from "swr";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { MerchantActions } from "@/components/merchants/merchant-actions";
+import { MerchantView } from "@/components/merchants/merchant-view";
+import { MerchantEdit } from "@/components/merchants/merchant-edit";
 
 interface Merchant {
   id: string;
@@ -79,6 +74,11 @@ const initialMerchantState: NewMerchant = {
 
 export default function MerchantsPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(
+    null
+  );
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newMerchant, setNewMerchant] =
     useState<NewMerchant>(initialMerchantState);
 
@@ -128,13 +128,29 @@ export default function MerchantsPage() {
 
       setIsOpen(false);
       setNewMerchant(initialMerchantState);
-      mutate(); // Refresh the merchants list
+      mutate();
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to create merchant",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleView = (id: string) => {
+    const merchant = merchants?.find((m) => m.id === id);
+    if (merchant) {
+      setSelectedMerchant(merchant);
+      setViewDialogOpen(true);
+    }
+  };
+
+  const handleEdit = (id: string) => {
+    const merchant = merchants?.find((m) => m.id === id);
+    if (merchant) {
+      setSelectedMerchant(merchant);
+      setEditDialogOpen(true);
     }
   };
 
@@ -295,29 +311,12 @@ export default function MerchantsPage() {
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit merchant
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete merchant
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <MerchantActions
+                      merchant={merchant}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      mutate={mutate}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -325,6 +324,19 @@ export default function MerchantsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <MerchantView
+        merchant={selectedMerchant}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+
+      <MerchantEdit
+        merchant={selectedMerchant}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={mutate}
+      />
     </div>
   );
 }
