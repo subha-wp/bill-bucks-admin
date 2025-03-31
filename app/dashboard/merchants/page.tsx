@@ -1,16 +1,64 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Eye, MoreHorizontal, Edit, Trash } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Eye, MoreHorizontal, Edit, Trash } from "lucide-react";
+import useSWR from "swr";
+import { toast } from "@/hooks/use-toast";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+interface Merchant {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  cashbackAmount: number;
+  createdAt: string;
+}
 
 export default function MerchantsPage() {
+  const {
+    data: merchants,
+    error,
+    isLoading,
+  } = useSWR<Merchant[]>("/api/merchants", fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+  });
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to fetch merchants",
+      variant: "destructive",
+    });
+    return <div>Failed to load merchants</div>;
+  }
+
+  if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -22,7 +70,9 @@ export default function MerchantsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Merchants</CardTitle>
-          <CardDescription>Manage all merchants on the platform</CardDescription>
+          <CardDescription>
+            Manage all merchants on the platform
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -38,14 +88,20 @@ export default function MerchantsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {merchants.map((merchant) => (
+              {merchants?.map((merchant) => (
                 <TableRow key={merchant.id}>
                   <TableCell className="font-medium">{merchant.name}</TableCell>
                   <TableCell>{merchant.address}</TableCell>
                   <TableCell>{merchant.city}</TableCell>
                   <TableCell>{merchant.phone}</TableCell>
                   <TableCell>{merchant.cashbackAmount}%</TableCell>
-                  <TableCell>{merchant.createdAt}</TableCell>
+                  <TableCell>
+                    {new Date(merchant.createdAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -78,55 +134,5 @@ export default function MerchantsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
-// Sample data
-const merchants = [
-  {
-    id: "merchant-001",
-    name: "Reliance Fresh",
-    address: "123 Main Street",
-    city: "Mumbai",
-    phone: "+91 2234567890",
-    cashbackAmount: "3.00",
-    createdAt: "2023-01-10",
-  },
-  {
-    id: "merchant-002",
-    name: "Big Bazaar",
-    address: "456 Market Road",
-    city: "Delhi",
-    phone: "+91 2234567891",
-    cashbackAmount: "2.50",
-    createdAt: "2023-01-15",
-  },
-  {
-    id: "merchant-003",
-    name: "DMart",
-    address: "789 Shopping Lane",
-    city: "Bangalore",
-    phone: "+91 2234567892",
-    cashbackAmount: "3.00",
-    createdAt: "2023-01-20",
-  },
-  {
-    id: "merchant-004",
-    name: "More Supermarket",
-    address: "101 Retail Park",
-    city: "Chennai",
-    phone: "+91 2234567893",
-    cashbackAmount: "3.50",
-    createdAt: "2023-02-05",
-  },
-  {
-    id: "merchant-005",
-    name: "Spencer's",
-    address: "202 Commerce Street",
-    city: "Hyderabad",
-    phone: "+91 2234567894",
-    cashbackAmount: "2.75",
-    createdAt: "2023-02-10",
-  },
-]
-
