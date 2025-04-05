@@ -47,7 +47,26 @@ export async function PATCH(
       shopImageUrl,
       latitude,
       longitude,
+      category,
+      openingTime,
+      closingTime,
+      isOpen,
+      rating,
     } = body;
+
+    // Validate required fields
+    if (!name || !address || !phone || !city) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Convert string values to numbers where needed
+    const parsedCashback = parseFloat(cashbackAmount);
+    const parsedLatitude = parseFloat(latitude);
+    const parsedLongitude = parseFloat(longitude);
+    const parsedRating = parseFloat(rating);
 
     const merchant = await prisma.merchant.update({
       where: {
@@ -58,11 +77,17 @@ export async function PATCH(
         address,
         phone,
         city,
-        cashbackAmount,
+        cashbackAmount: parsedCashback,
         logoUrl,
         shopImageUrl,
-        latitude,
-        longitude,
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
+        category,
+        openingTime,
+        closingTime,
+        isOpen,
+        rating: parsedRating,
+        updatedAt: new Date(),
       },
     });
 

@@ -46,6 +46,8 @@ const categories = [
   "Fashion",
   "Health & Beauty",
   "Services",
+  "Plumber",
+  "Restaurant",
   "Other",
 ];
 
@@ -146,8 +148,8 @@ export function MerchantForm({
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
+              {categories.map((category, idx) => (
+                <SelectItem key={idx} value={category}>
                   {category}
                 </SelectItem>
               ))}
