@@ -21,46 +21,27 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import useSWR from "swr";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { MerchantActions } from "@/components/merchants/merchant-actions";
 import { MerchantView } from "@/components/merchants/merchant-view";
 import { MerchantEdit } from "@/components/merchants/merchant-edit";
+import {
+  MerchantForm,
+  MerchantFormData,
+} from "@/components/merchants/merchant-form";
 
-interface Merchant {
+interface Merchant extends MerchantFormData {
   id: string;
-  name: string;
-  address: string;
-  city: string;
-  phone: string;
-  cashbackAmount: number;
-  logoUrl?: string;
-  shopImageUrl?: string;
-  latitude?: number;
-  longitude?: number;
   createdAt: string;
 }
 
-interface NewMerchant {
-  name: string;
-  address: string;
-  city: string;
-  phone: string;
-  cashbackAmount: number;
-  logoUrl: string;
-  shopImageUrl: string;
-  latitude: number;
-  longitude: number;
-}
-
-const initialMerchantState: NewMerchant = {
+const initialMerchantState: MerchantFormData = {
   name: "",
   address: "",
   city: "",
@@ -70,6 +51,11 @@ const initialMerchantState: NewMerchant = {
   shopImageUrl: "",
   latitude: 0,
   longitude: 0,
+  category: "",
+  openingTime: "09:00",
+  closingTime: "21:00",
+  isOpen: true,
+  rating: 0,
 };
 
 export default function MerchantsPage() {
@@ -79,8 +65,6 @@ export default function MerchantsPage() {
   );
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [newMerchant, setNewMerchant] =
-    useState<NewMerchant>(initialMerchantState);
 
   const {
     data: merchants,
@@ -95,26 +79,14 @@ export default function MerchantsPage() {
     }
   );
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewMerchant((prev) => ({
-      ...prev,
-      [name]:
-        name === "cashbackAmount" || name === "latitude" || name === "longitude"
-          ? parseFloat(value)
-          : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: MerchantFormData) => {
     try {
       const response = await fetch("/api/merchants", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newMerchant),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -127,7 +99,6 @@ export default function MerchantsPage() {
       });
 
       setIsOpen(false);
-      setNewMerchant(initialMerchantState);
       mutate();
     } catch (error) {
       toast({
@@ -174,103 +145,18 @@ export default function MerchantsPage() {
             <DialogTrigger asChild>
               <Button>Add Merchant</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add New Merchant</DialogTitle>
                 <DialogDescription>
                   Enter the merchant details below
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Input
-                    name="name"
-                    placeholder="Merchant Name"
-                    value={newMerchant.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="address"
-                    placeholder="Address"
-                    value={newMerchant.address}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="city"
-                    placeholder="City"
-                    value={newMerchant.city}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="phone"
-                    placeholder="Phone Number"
-                    value={newMerchant.phone}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="cashbackAmount"
-                    type="number"
-                    placeholder="Cashback Amount (%)"
-                    value={newMerchant.cashbackAmount}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="logoUrl"
-                    placeholder="Logo URL"
-                    value={newMerchant.logoUrl}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    name="shopImageUrl"
-                    placeholder="Shop Image URL"
-                    value={newMerchant.shopImageUrl}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    name="latitude"
-                    type="number"
-                    placeholder="Latitude"
-                    value={newMerchant.latitude}
-                    onChange={handleInputChange}
-                    required
-                    step="any"
-                  />
-                  <Input
-                    name="longitude"
-                    type="number"
-                    placeholder="Longitude"
-                    value={newMerchant.longitude}
-                    onChange={handleInputChange}
-                    required
-                    step="any"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Add Merchant</Button>
-                </DialogFooter>
-              </form>
+              <MerchantForm
+                initialData={initialMerchantState}
+                onSubmit={handleSubmit}
+                submitLabel="Add Merchant"
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -287,10 +173,13 @@ export default function MerchantsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>City</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Cashback %</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Added On</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -299,10 +188,19 @@ export default function MerchantsPage() {
               {merchants?.map((merchant) => (
                 <TableRow key={merchant.id}>
                   <TableCell className="font-medium">{merchant.name}</TableCell>
+                  <TableCell>{merchant.category || "N/A"}</TableCell>
                   <TableCell>{merchant.address}</TableCell>
                   <TableCell>{merchant.city}</TableCell>
                   <TableCell>{merchant.phone}</TableCell>
                   <TableCell>{merchant.cashbackAmount}%</TableCell>
+                  <TableCell>{merchant.rating?.toFixed(1) || "N/A"}</TableCell>
+                  <TableCell>
+                    {merchant.isOpen ? (
+                      <span className="text-green-600">Open</span>
+                    ) : (
+                      <span className="text-red-600">Closed</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {new Date(merchant.createdAt).toLocaleDateString("en-GB", {
                       day: "2-digit",
