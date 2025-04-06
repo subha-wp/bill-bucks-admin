@@ -27,9 +27,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Eye, MoreHorizontal } from "lucide-react";
 import useSWR from "swr";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useState } from "react";
 
-const fetcher = (url: string): Promise<User[]> =>
-  fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface User {
   id: string;
@@ -47,22 +55,38 @@ interface User {
   };
 }
 
+interface UsersResponse {
+  users: User[];
+  total: number;
+  pages: number;
+}
+
 export default function UsersPage() {
-  const {
-    data: users,
-    error,
-    isLoading,
-  } = useSWR<User[]>("/api/users", fetcher, {
-    refreshInterval: 5000,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
+
+  const { data, error, isLoading } = useSWR<UsersResponse>(
+    `/api/users?page=${currentPage}&limit=${limit}`,
+    fetcher,
+    {
+      refreshInterval: 5000,
+    }
+  );
 
   if (error) return <div>Failed to load users</div>;
-  if (isLoading || !users) return <div>Loading...</div>;
+  if (isLoading || !data) return <div>Loading...</div>;
+
+  const { users, total, pages } = data;
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Users</h2>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Users</h2>
+          <p className="text-muted-foreground">
+            Total {total} user{total !== 1 ? "s" : ""} registered
+          </p>
+        </div>
         <div className="flex items-center space-x-2">
           <Button>Export Users</Button>
         </div>
@@ -166,6 +190,53 @@ export default function UsersPage() {
               ))}
             </TableBody>
           </Table>
+
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < pages) setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage >= pages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>
