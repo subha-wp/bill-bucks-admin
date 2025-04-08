@@ -9,9 +9,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CashTrack Admin",
+  title: "Bill Buckz Admin",
   description: "Admin panel for managing cashbacks, withdrawals, and invoices",
-  generator: "v0.dev",
 };
 
 export default function RootLayout({
