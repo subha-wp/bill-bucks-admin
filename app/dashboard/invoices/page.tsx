@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -32,22 +33,78 @@ import {
   Download,
   CheckCircle,
   XCircle,
+  Search,
 } from "lucide-react";
 import useSWR from "swr";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function InvoicesPage() {
-  const {
-    data: invoices,
-    error,
-    isLoading,
-  } = useSWR("/api/invoices", fetcher, {
-    refreshInterval: 5000, // Refresh every 5 seconds
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [status, setStatus] = useState<string>("");
+  const [type, setType] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const limit = 10;
+
+  const { data, error, isLoading, mutate } = useSWR(
+    `/api/invoices?page=${currentPage}&limit=${limit}&status=${status}&type=${type}&search=${search}`,
+    fetcher,
+    {
+      refreshInterval: 5000,
+    }
+  );
+
+  const updateInvoiceStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update invoice status");
+      }
+
+      toast({
+        title: "Success",
+        description: `Invoice ${newStatus.toLowerCase()} successfully`,
+      });
+
+      mutate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update invoice status",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (error) return <div>Failed to load invoices</div>;
   if (isLoading) return <div>Loading...</div>;
+
+  const { invoices, total, pages } = data;
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -57,6 +114,39 @@ export default function InvoicesPage() {
           <Button>Download All</Button>
         </div>
       </div>
+
+      <div className="flex items-center space-x-2">
+        <div className="flex-1 flex space-x-2">
+          <Input
+            placeholder="Search invoices..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="merchant">Merchant</SelectItem>
+              <SelectItem value="non-merchant">Non-Merchant</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>All Invoices</CardTitle>
@@ -131,14 +221,27 @@ export default function InvoicesPage() {
                           Download invoice
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <XCircle className="mr-2 h-4 w-4" />
-                          Reject
-                        </DropdownMenuItem>
+                        {invoice.status === "PENDING" && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateInvoiceStatus(invoice.id, "APPROVED")
+                              }
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                updateInvoiceStatus(invoice.id, "REJECTED")
+                              }
+                              className="text-destructive"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Reject
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -146,6 +249,53 @@ export default function InvoicesPage() {
               ))}
             </TableBody>
           </Table>
+
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < pages) setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage >= pages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
     </div>

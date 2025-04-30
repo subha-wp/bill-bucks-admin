@@ -39,9 +39,7 @@ export function RecentSales({ transactions = [] }: RecentSalesProps) {
               {transaction.user.phoneNumber}
             </p>
           </div>
-          <div className="ml-auto font-medium">
-            +₹{transaction.amount.toFixed(2)}
-          </div>
+          <div className="ml-auto font-medium">+₹{transaction.amount}</div>
         </div>
       ))}
     </div>
