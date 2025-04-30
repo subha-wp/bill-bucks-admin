@@ -98,34 +98,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <Link href="/dashboard/invoices">All Invoices</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/dashboard/invoices/pending"}
-                      >
-                        <Link href="/dashboard/invoices/pending">Pending</Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/dashboard/invoices/approved"}
-                      >
-                        <Link href="/dashboard/invoices/approved">
-                          Approved
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/dashboard/invoices/rejected"}
-                      >
-                        <Link href="/dashboard/invoices/rejected">
-                          Rejected
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </CollapsibleContent>
               </SidebarMenuItem>
@@ -149,28 +121,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         isActive={pathname === "/dashboard/cashbacks"}
                       >
                         <Link href="/dashboard/cashbacks">All Cashbacks</Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/dashboard/cashbacks/merchant"}
-                      >
-                        <Link href="/dashboard/cashbacks/merchant">
-                          Merchant
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={
-                          pathname === "/dashboard/cashbacks/non-merchant"
-                        }
-                      >
-                        <Link href="/dashboard/cashbacks/non-merchant">
-                          Non-Merchant
-                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -197,40 +147,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       >
                         <Link href="/dashboard/withdrawals">
                           All Withdrawals
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={pathname === "/dashboard/withdrawals/pending"}
-                      >
-                        <Link href="/dashboard/withdrawals/pending">
-                          Pending
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={
-                          pathname === "/dashboard/withdrawals/completed"
-                        }
-                      >
-                        <Link href="/dashboard/withdrawals/completed">
-                          Completed
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={
-                          pathname === "/dashboard/withdrawals/rejected"
-                        }
-                      >
-                        <Link href="/dashboard/withdrawals/rejected">
-                          Rejected
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
