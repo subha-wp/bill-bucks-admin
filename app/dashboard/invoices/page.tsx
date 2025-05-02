@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/pagination";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { InvoiceDetails } from "@/components/invoices/invoice-details";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -62,6 +63,8 @@ export default function InvoicesPage() {
   const [status, setStatus] = useState<string>("");
   const [type, setType] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const limit = 10;
 
   const { data, error, isLoading, mutate } = useSWR(
@@ -99,6 +102,11 @@ export default function InvoicesPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleView = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setViewDialogOpen(true);
   };
 
   if (error) return <div>Failed to load invoices</div>;
@@ -212,7 +220,7 @@ export default function InvoicesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleView(invoice)}>
                           <Eye className="mr-2 h-4 w-4" />
                           View details
                         </DropdownMenuItem>
@@ -298,6 +306,12 @@ export default function InvoicesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <InvoiceDetails
+        invoice={selectedInvoice}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
     </div>
   );
 }
