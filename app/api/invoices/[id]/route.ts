@@ -35,10 +35,15 @@ export async function PATCH(
     if (status === "APPROVED") {
       let cashbackAmount = 0;
 
-      // Only merchant invoices with amount > 200 get cashback
-      if (invoice.isMerchant && Number(invoice.amount) > 200) {
-        // Generate a random cashback amount between 3 and 6 (inclusive)
-        cashbackAmount = Math.floor(Math.random() * 4) + 3; // Random integer from 3 to 6
+      // Check invoice amount to determine cashback type
+      if (invoice.isMerchant) {
+        if (Number(invoice.amount) > 1000) {
+          // For invoices > 3000, give 1% cashback
+          cashbackAmount = Math.floor(Number(invoice.amount) * 0.01);
+        } else if (Number(invoice.amount) > 200) {
+          // For merchant invoices with amount > 200 but <= 3000, give random 3-6 cashback
+          cashbackAmount = Math.floor(Math.random() * 4) + 3; // Random integer from 3 to 6
+        }
       }
 
       // Only create cashback record and update balance if there is a cashback
@@ -48,7 +53,7 @@ export async function PATCH(
             userId: invoice.userId,
             invoiceId: invoice.id,
             amount: cashbackAmount,
-            type: "MERCHANT", // Only merchant invoices get cashback
+            type: invoice.isMerchant ? "MERCHANT" : "STANDARD",
           },
         });
 
