@@ -35,6 +35,14 @@ import {
   MerchantForm,
   MerchantFormData,
 } from "@/components/merchants/merchant-form";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Merchant extends MerchantFormData {
   id: string;
@@ -65,14 +73,15 @@ export default function MerchantsPage() {
   );
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
 
-  const {
-    data: merchants,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR<Merchant[]>(
-    "/api/merchants",
+  const { data, error, isLoading, mutate } = useSWR<{
+    merchants: Merchant[];
+    total: number;
+    pages: number;
+  }>(
+    `/api/merchants?page=${currentPage}&limit=${limit}`,
     (url) => fetch(url).then((res) => res.json()),
     {
       refreshInterval: 5000,
@@ -110,7 +119,7 @@ export default function MerchantsPage() {
   };
 
   const handleView = (id: string) => {
-    const merchant = merchants?.find((m) => m.id === id);
+    const merchant = data?.merchants?.find((m) => m.id === id);
     if (merchant) {
       setSelectedMerchant(merchant);
       setViewDialogOpen(true);
@@ -118,7 +127,7 @@ export default function MerchantsPage() {
   };
 
   const handleEdit = (id: string) => {
-    const merchant = merchants?.find((m) => m.id === id);
+    const merchant = data?.merchants?.find((m) => m.id === id);
     if (merchant) {
       setSelectedMerchant(merchant);
       setEditDialogOpen(true);
@@ -185,7 +194,7 @@ export default function MerchantsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {merchants?.map((merchant) => (
+              {data?.merchants?.map((merchant) => (
                 <TableRow key={merchant.id}>
                   <TableCell className="font-medium">{merchant.name}</TableCell>
                   <TableCell>{merchant.category || "N/A"}</TableCell>
@@ -220,6 +229,56 @@ export default function MerchantsPage() {
               ))}
             </TableBody>
           </Table>
+
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: data?.pages || 0 }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(page);
+                        }}
+                        isActive={currentPage === page}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < (data?.pages || 0))
+                        setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage >= (data?.pages || 0)
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </CardContent>
       </Card>
 
