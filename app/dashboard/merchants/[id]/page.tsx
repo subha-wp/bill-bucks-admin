@@ -53,7 +53,7 @@ interface MerchantReport {
     status: "ACTIVE" | "SUSPENDED";
   };
   currentCycle: BillingCycle;
-  previousCycles: BillingCycle[];
+  lastCycle: BillingCycle | null;
   recentInvoices: any[];
 }
 
@@ -65,10 +65,7 @@ export default function MerchantReportPage() {
 
   const { data, error, isLoading, mutate } = useSWR<MerchantReport>(
     `/api/merchants/${merchantId}/report`,
-    fetcher,
-    {
-      refreshInterval: 5000,
-    }
+    fetcher
   );
 
   const updateMerchantStatus = async (status: "ACTIVE" | "SUSPENDED") => {
@@ -152,6 +149,7 @@ export default function MerchantReportPage() {
       currency: "INR",
     }).format(amount);
   };
+  console.log("data", data?.merchant);
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -160,8 +158,8 @@ export default function MerchantReportPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             {data?.merchant.name} - Report
           </h2>
-          <p className="text-muted-foreground">
-            Status:{" "}
+          <div className="flex items-center space-x-2">
+            <p className="text-muted-foreground">Status: </p>
             <Badge
               variant={
                 data?.merchant.status === "ACTIVE" ? "success" : "destructive"
@@ -169,7 +167,7 @@ export default function MerchantReportPage() {
             >
               {data?.merchant.status}
             </Badge>
-          </p>
+          </div>
         </div>
         <Button
           variant={
@@ -182,10 +180,10 @@ export default function MerchantReportPage() {
           }
         >
           {data?.merchant.status === "ACTIVE" ? (
-            <>
+            <p className="text-white flex items-center">
               <AlertCircle className="mr-2 h-4 w-4" />
               Suspend Merchant
-            </>
+            </p>
           ) : (
             <>
               <CheckCircle className="mr-2 h-4 w-4" />
@@ -250,7 +248,7 @@ export default function MerchantReportPage() {
         <CardHeader>
           <CardTitle>Billing Cycles</CardTitle>
           <CardDescription>
-            View all billing cycles and their status
+            Current and previous billing cycle details
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -267,8 +265,9 @@ export default function MerchantReportPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[data?.currentCycle, ...(data?.previousCycles || [])].map(
-                (cycle) => (
+              {[data?.currentCycle, data?.lastCycle]
+                .filter(Boolean)
+                .map((cycle) => (
                   <TableRow key={cycle.id}>
                     <TableCell>
                       {formatDate(cycle.startDate)} -{" "}
@@ -324,8 +323,7 @@ export default function MerchantReportPage() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )
-              )}
+                ))}
             </TableBody>
           </Table>
         </CardContent>
@@ -334,7 +332,7 @@ export default function MerchantReportPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Invoices</CardTitle>
-          <CardDescription>Last 15 days of invoice activity</CardDescription>
+          <CardDescription>Current billing cycle invoices</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

@@ -18,6 +18,7 @@ export async function GET(
         address: true,
         phone: true,
         cashbackAmount: true,
+        status: true,
       },
     });
 
@@ -33,13 +34,19 @@ export async function GET(
     const currentDay = now.getDate();
     let cycleStartDate: Date;
     let cycleEndDate: Date;
+    let lastCycleStartDate: Date;
+    let lastCycleEndDate: Date;
 
     if (currentDay <= 14) {
       cycleStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
       cycleEndDate = new Date(now.getFullYear(), now.getMonth(), 14);
+      lastCycleStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+      lastCycleEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
     } else {
       cycleStartDate = new Date(now.getFullYear(), now.getMonth(), 15);
       cycleEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      lastCycleStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      lastCycleEndDate = new Date(now.getFullYear(), now.getMonth(), 14);
     }
 
     // Get current cycle invoices
@@ -49,6 +56,21 @@ export async function GET(
         createdAt: {
           gte: cycleStartDate,
           lte: cycleEndDate,
+        },
+        status: "APPROVED",
+      },
+      include: {
+        cashback: true,
+      },
+    });
+
+    // Get last cycle invoices
+    const lastCycleInvoices = await prisma.invoice.findMany({
+      where: {
+        merchantId,
+        createdAt: {
+          gte: lastCycleStartDate,
+          lte: lastCycleEndDate,
         },
         status: "APPROVED",
       },
@@ -67,85 +89,65 @@ export async function GET(
       { totalAmount: 0, totalCashback: 0 }
     );
 
+    // Calculate last cycle totals
+    const lastCycleTotals = lastCycleInvoices.reduce(
+      (acc, invoice) => ({
+        totalAmount: acc.totalAmount + Number(invoice.amount),
+        totalCashback:
+          acc.totalCashback + Number(invoice.cashback?.amount || 0),
+      }),
+      { totalAmount: 0, totalCashback: 0 }
+    );
+
+    // Get billing cycles from database
+    const [currentBillingCycle, lastBillingCycle] = await Promise.all([
+      prisma.billingCycle.findFirst({
+        where: {
+          merchantId,
+          startDate: cycleStartDate,
+          endDate: cycleEndDate,
+        },
+      }),
+      prisma.billingCycle.findFirst({
+        where: {
+          merchantId,
+          startDate: lastCycleStartDate,
+          endDate: lastCycleEndDate,
+        },
+      }),
+    ]);
+
     const currentCycle = {
+      id: currentBillingCycle?.id || "current",
       startDate: cycleStartDate,
       endDate: cycleEndDate,
       totalInvoices: currentCycleInvoices.length,
       totalAmount: currentCycleTotals.totalAmount,
       totalCashback: currentCycleTotals.totalCashback,
       serviceCharge: currentCycleTotals.totalAmount * 0.03, // 3% service charge
-      status: "PENDING" as const,
+      status: currentBillingCycle?.status || "PENDING",
     };
 
-    // Get previous cycles (last 3 cycles)
-    const previousCycles = [];
-    for (let i = 1; i <= 3; i++) {
-      const cycleStart =
-        currentDay <= 14
-          ? new Date(
-              now.getFullYear(),
-              now.getMonth() - Math.ceil(i / 2),
-              i % 2 === 1 ? 15 : 1
-            )
-          : new Date(
-              now.getFullYear(),
-              now.getMonth() - Math.floor(i / 2),
-              i % 2 === 0 ? 15 : 1
-            );
-
-      const cycleEnd =
-        currentDay <= 14
-          ? new Date(
-              now.getFullYear(),
-              now.getMonth() - Math.floor(i / 2),
-              i % 2 === 1 ? 31 : 14
-            )
-          : new Date(
-              now.getFullYear(),
-              now.getMonth() - Math.floor(i / 2),
-              i % 2 === 0 ? 31 : 14
-            );
-
-      const cycleInvoices = await prisma.invoice.findMany({
-        where: {
-          merchantId,
-          createdAt: {
-            gte: cycleStart,
-            lte: cycleEnd,
-          },
-          status: "APPROVED",
-        },
-        include: {
-          cashback: true,
-        },
-      });
-
-      const cycleTotals = cycleInvoices.reduce(
-        (acc, invoice) => ({
-          totalAmount: acc.totalAmount + Number(invoice.amount),
-          totalCashback:
-            acc.totalCashback + Number(invoice.cashback?.amount || 0),
-        }),
-        { totalAmount: 0, totalCashback: 0 }
-      );
-
-      previousCycles.push({
-        startDate: cycleStart,
-        endDate: cycleEnd,
-        totalInvoices: cycleInvoices.length,
-        totalAmount: cycleTotals.totalAmount,
-        totalCashback: cycleTotals.totalCashback,
-        serviceCharge: cycleTotals.totalAmount * 0.03,
-        status: Math.random() > 0.5 ? "PAID" : "OVERDUE", // Simulated status
-      });
-    }
+    const lastCycle = lastBillingCycle
+      ? {
+          id: lastBillingCycle.id,
+          startDate: lastCycleStartDate,
+          endDate: lastCycleEndDate,
+          totalInvoices: lastCycleInvoices.length,
+          totalAmount: lastCycleTotals.totalAmount,
+          totalCashback: lastCycleTotals.totalCashback,
+          serviceCharge: lastCycleTotals.totalAmount * 0.03,
+          status: lastBillingCycle.status,
+        }
+      : null;
 
     // Get recent invoices
     const recentInvoices = await prisma.invoice.findMany({
       where: {
         merchantId,
         createdAt: {
-          gte: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000), // Last 15 days
+          gte: cycleStartDate,
+          lte: cycleEndDate,
         },
       },
       include: {
@@ -165,7 +167,7 @@ export async function GET(
     return NextResponse.json({
       merchant,
       currentCycle,
-      previousCycles,
+      lastCycle,
       recentInvoices,
     });
   } catch (error) {
