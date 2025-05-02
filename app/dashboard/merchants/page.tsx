@@ -43,6 +43,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import Link from "next/link";
 
 interface Merchant extends MerchantFormData {
   id: string;
@@ -196,7 +197,11 @@ export default function MerchantsPage() {
             <TableBody>
               {data?.merchants?.map((merchant) => (
                 <TableRow key={merchant.id}>
-                  <TableCell className="font-medium">{merchant.name}</TableCell>
+                  <Link href={`/dashboard/merchants/${merchant.id}`}>
+                    <TableCell className="font-medium">
+                      {merchant.name}
+                    </TableCell>
+                  </Link>
                   <TableCell>{merchant.category || "N/A"}</TableCell>
                   <TableCell>{merchant.address}</TableCell>
                   <TableCell>{merchant.city}</TableCell>
